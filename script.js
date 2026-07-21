@@ -1148,7 +1148,12 @@ function opsCommentsHtml() {
 function opsSolicitudContent() {
   const brand = currentCase.concesionario === 'TOYOTA' ? 'Toyota' : 'Hyundai';
   const model = currentCase.concesionario === 'TOYOTA' ? 'Corolla' : 'Accent';
-  const checklist = currentCase.checklist2 || ['S01.ORH.FR.007-Acta de Entrega - Recepción de CargoV02jp[F].pdf'];
+  const checklistItems = [
+    {title:'FILE DE CONTRATOS', files:[`File_de_contratos_${currentCase.solicitud}.pdf`]},
+    {title:'COTIZACIÓN', files:[`Cotizacion_${currentCase.solicitud}.pdf`]},
+    {title:'CARTA DE CARACTERÍSTICAS', files:[`Carta_de_caracteristicas_${currentCase.solicitud}.pdf`]},
+    {title:'SUSTENTO CUOTA INICIAL', files:[`Sustento_cuota_inicial_${currentCase.solicitud}.pdf`]}
+  ];
   const clientParts = String(currentCase.cliente || '').trim().split(/\s+/);
   const clientNames = currentCase.solicitud === 'EFE004' ? 'Juan' : clientParts.slice(0, Math.max(1, clientParts.length - 2)).join(' ');
   const clientPaternal = currentCase.solicitud === 'EFE004' ? 'Pérez' : (clientParts.at(-2) || '—');
@@ -1165,7 +1170,7 @@ function opsSolicitudContent() {
       <details class="ops-executive-accordion"><summary><strong>DATOS DE VEHÍCULO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><div class="ops-review-grid">${opsReviewField('Estado vehículo','Nuevo')}${opsReviewField('Concesionario',currentCase.concesionario)}${opsReviewField('Sucursal',currentCase.tienda)}${opsReviewField('Tipo Doc. vendedor','DNI')}${opsReviewField('N° Doc. vendedor','748578966')}${opsReviewField('Nombre completo vendedor','Alonso Gonzales Romero')}${opsReviewField('Marca',brand)}${opsReviewField('Modelo',model)}${opsReviewField('Año modelo','2026')}${opsReviewField('Tarjeta propiedad a nombre de','Titular')}${opsReviewField('Color','Plata Metálico')}${opsReviewField('Tipo de vehículo','Automóvil')}${opsReviewField('VIN','BAIDAA3G512345678')}${opsReviewField('N° de motor','2ZR-458796321')}</div></section></div></details>
       <details class="ops-executive-accordion"><summary><strong>DATOS DEL CRÉDITO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-credit-detail"><section><div class="ops-review-grid">${opsReviewField('Producto','Crédito Vehicular')}${opsReviewField('Campaña comercial','SUV Mayo 2026')}${opsReviewField('Moneda Financiamiento','Soles (S/)')}${opsReviewField('Tipo Cambio','3.78')}${opsReviewField('Precio Vehículo','$ 15,000.00')}${opsReviewField('Cuota Inicial','$ 6,500.00')}${opsReviewField('Día Pago','03')}${opsReviewField('Total Financiamiento','S/ 32,130.00')}</div><div class="ops-inline-calculation"><h3>Resultado del cálculo</h3><p>Resultado seleccionado por el ejecutivo para continuar con la solicitud.</p><div class="ops-result-table"><b>Plazo</b><b>TEA</b><b>Cuota</b><b>CME</b><b>Capacidad</b><span>60 meses</span><span>12.80%</span><span>S/. 500.00</span><span>S/. 3,150.00</span><span class="ok">Cumple</span></div></div></section><section><h3>GASTOS Y PLAN GPS</h3><div class="ops-review-grid">${opsReviewField('Gastos Notariales','Sí')}${opsReviewField('Gastos Registrales (sábana)','Sí')}${opsReviewField('Gastos Delivery Firma','Sí')}${opsReviewField('Plan GPS','Premium')}${opsReviewField('Gastos Inclusión GPS (cálculo)','$ 650.00')}${opsReviewField('Cuotas Dobles','Sí')}${opsReviewField('Meses de cuotas dobles','Agosto / Enero')}${opsReviewField('Incluir Portes','No')}</div></section><section><h3>SEGUROS</h3><div class="ops-review-grid">${opsReviewField('Seguro Vehicular','Con seguro')}${opsReviewField('Costo Seguro Vehicular','12.10%')}${opsReviewField('Seguro Desgravamen','Con seguro')}${opsReviewField('Tipo de seguro desgravamen','Individual')}</div></section></div></details>
     </section>
-    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-files">${checklist.map(file=>`<div><span>▤ ${escapeOpsReview(file)}</span><button type="button" data-file="${escapeOpsReview(file)}" onclick="downloadOpsDocument(this.dataset.file)">↓ Descargar</button></div>`).join('')}</div></section>
+    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-accordions">${checklistItems.map((item,itemIndex)=>`<details class="ops-checklist-item"><summary><strong>${escapeOpsReview(item.title)}</strong><span>Ver detalle</span></summary><div class="ops-checklist-item-body">${item.files.map((file,fileIndex)=>`<button class="ops-checklist-document" type="button" data-file="${escapeOpsReview(file)}" data-number="${itemIndex + fileIndex + 1}" onclick="openDocumentPreview(this.dataset.file, Number(this.dataset.number))"><span>▤</span><span><strong>${escapeOpsReview(file)}</strong><small>Click para previsualizar el documento</small></span><b>Ver archivo</b></button>`).join('')}</div></details>`).join('')}</div></section>
     <section class="ops-review-card"><h2>COMENTARIOS</h2><p>Historial registrado durante el proceso de la solicitud.</p><div class="ops-comments-history">${opsCommentsHtml()}</div></section>`;
 }
 
@@ -1251,28 +1256,13 @@ $('detailSubtitle').textContent=`${currentCase.cliente} · ${currentCase.documen
   if ($('opsVehiculoTienda')) $('opsVehiculoTienda').value = currentCase.tienda;
   if ($('opsVehiculoEjecutivo')) $('opsVehiculoEjecutivo').value = currentCase.usuario;
 
-  // Render proper screen layout and timelines
-  if (currentCase.estado === 'Activado') {
-    document.querySelector('.detail-header')?.classList.remove('hidden');
-    document.querySelector('.ops-main-layout')?.classList.remove('executive-review-mode');
-    if($('btnAprobarActivarBantotal')) $('btnAprobarActivarBantotal').disabled = true;
-    if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
-    if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
-    
-    $('stageAPanel').classList.add('hidden');
-    $('stageBPanel').classList.remove('hidden');
-    $('detailHeaderTitle').textContent = "Activación Bantotal";
-    
-    populateStageB();
-  } else {
-    document.querySelector('.detail-header')?.classList.add('hidden');
-    document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
-    $('stageAPanel').classList.remove('hidden');
-    $('stageBPanel').classList.add('hidden');
-    $('detailHeaderTitle').textContent = "Solicitud";
-    $('detailSubtitle').textContent = 'Expediente recibido en Operaciones · Estado Pendiente';
-    renderExecutiveOpsReview();
-  }
+  // La Solicitud es la única pantalla de consulta, incluso para casos activados.
+  document.querySelector('.detail-header')?.classList.add('hidden');
+  document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
+  $('stageAPanel').classList.remove('hidden');
+  $('detailHeaderTitle').textContent = "Solicitud";
+  $('detailSubtitle').textContent = 'Expediente recibido en Operaciones';
+  renderExecutiveOpsReview();
 
   renderObservationBox();
   renderTracking();
@@ -1452,8 +1442,6 @@ observarModal?.addEventListener('click', e => {
 });
 
 $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
-  showModal('Activación Exitosa', `Se aprobó la solicitud y se activó exitosamente en Bantotal.`);
-  
   currentCase.estado = 'Activado';
   currentCase.fechaActivacion = getFormattedNow();
   currentCase.analistaActivacion = usuarioOperacionesSesion;
@@ -1461,12 +1449,6 @@ $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
   currentCase.historialOperaciones.push({rol:'Analista de Operaciones',usuario:usuarioOperacionesSesion,fecha:currentCase.fechaActivacion,comentario:'Solicitud aprobada y activada en Bantotal.'});
   saveCases();
   fillAnalistaFilter();
-  
-  $('stageAPanel').classList.add('hidden');
-  $('stageBPanel').classList.remove('hidden');
-  $('detailHeaderTitle').textContent = "Activación Bantotal";
-  
-  populateStageB();
   renderTracking();
   applyFilters();
   
@@ -1474,10 +1456,8 @@ $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
   if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
   if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
 
-  window.scrollTo({top:0,behavior:'smooth'});
+  showModal('Activación Exitosa', `Se aprobó la solicitud y se activó exitosamente en Bantotal.`, 'info', false, regresarABandeja);
 });
-
-$('btnRegresarBandejaActivacion')?.addEventListener('click',intentarRegresarABandeja);
 
 let activePreviewName = '';
 let activePreviewNum = 1;
