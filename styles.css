@@ -1612,3 +1612,167 @@ th{font-size:11.5px!important;}
   .ops-request-summary,.ops-simulation-meta{grid-template-columns:1fr 1fr}
   .ops-review-grid{grid-template-columns:1fr 1fr}
 }
+
+/* Solicitud única: expediente completo de Operaciones */
+.ops-solicitud-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  padding: 10px 18px;
+  border: 1px solid #d8e1ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgb(22 49 92 / 5%);
+  gap: 13px;
+}
+
+.ops-solicitud-toolbar > button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: #075bd7;
+  box-shadow: 0 4px 9px rgb(7 91 215 / 22%);
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  place-items: center;
+}
+
+.ops-solicitud-toolbar h1 {
+  margin: 0;
+  color: #0753c7;
+  font-size: 22px;
+}
+
+.ops-solicitud-toolbar > div {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  color: #111827;
+  font-size: 12px;
+  gap: 20px;
+}
+
+.ops-solicitud-toolbar b span { color: #1556df; }
+.ops-solicitud-toolbar em {
+  padding: 8px 15px;
+  border: 1px solid #f4c388;
+  border-radius: 8px;
+  background: #fff9f0;
+  color: #e26a00;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ops-consultation-card {
+  overflow: hidden;
+  border: 1px solid #d8e1ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgb(22 49 92 / 7%);
+}
+
+.ops-consultation-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 0 22px;
+  color: #093b8d;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ops-consultation-card summary::-webkit-details-marker { display: none; }
+.ops-consultation-card summary span { color: #075bd7; font-size: 12px; font-weight: 800; }
+.ops-consultation-card summary span::after { content: '⌄'; margin-left: 10px; }
+.ops-consultation-card[open] summary span::after { content: '⌃'; }
+
+.ops-consultation-grid {
+  display: grid;
+  grid-template-columns: repeat(8,minmax(0,1fr));
+  padding: 14px 22px;
+  border-top: 1px solid #dfe6f0;
+  background: #f7f9fd;
+  gap: 8px;
+}
+
+.ops-consultation-grid > div {
+  display: grid;
+  min-height: 56px;
+  padding: 10px;
+  border: 1px solid #d8e1ee;
+  border-radius: 7px;
+  background: #fff;
+  gap: 6px;
+}
+
+.ops-consultation-grid > div.qualified {
+  border-left: 4px solid #10b981;
+  background: #eaf9f3;
+}
+
+.ops-consultation-grid small { color: #728096; font-size: 10px; }
+.ops-consultation-grid strong { color: #153b78; font-size: 12px; }
+.ops-consultation-grid .qualified strong { color: #07845c; font-size: 14px; }
+
+.ops-summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.ops-summary-actions b {
+  color: #075bd7;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ops-summary-actions b::after { content: '⌄'; margin-left: 8px; }
+.ops-executive-accordion[open] .ops-summary-actions b::after { content: '⌃'; }
+
+.ops-income-disabled {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+  padding: 0 18px;
+  border: 1px solid #dde4ee;
+  border-radius: 11px;
+  background: #f3f5f8;
+  color: #8793a5;
+}
+
+.ops-income-disabled span {
+  font-size: 11px;
+  font-style: italic;
+}
+
+.ops-credit-detail { gap: 18px; }
+.ops-inline-calculation {
+  margin-top: 10px;
+  padding: 15px;
+  border: 1px solid #d8e1ee;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ops-inline-calculation p {
+  margin: 5px 0 0;
+  color: #728096;
+  font-size: 11px;
+}
+
+@media(max-width:1200px){
+  .ops-consultation-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+}
+
+@media(max-width:760px){
+  .ops-solicitud-toolbar{align-items:flex-start;flex-wrap:wrap;}
+  .ops-solicitud-toolbar > div{width:100%;margin-left:0;flex-wrap:wrap;gap:10px;}
+  .ops-consultation-grid{grid-template-columns:1fr 1fr;}
+  .ops-result-table{grid-template-columns:repeat(5,minmax(100px,1fr));overflow-x:auto;}
+}
