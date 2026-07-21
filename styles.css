@@ -1668,6 +1668,9 @@ th{font-size:11.5px!important;}
 }
 
 .ops-consultation-card {
+  position: sticky;
+  top: 12px;
+  z-index: 80;
   overflow: hidden;
   border: 1px solid #d8e1ee;
   border-radius: 14px;
@@ -1751,6 +1754,59 @@ th{font-size:11.5px!important;}
   font-style: italic;
 }
 
+.ops-income-body {
+  padding: 16px;
+  gap: 16px;
+}
+
+.ops-income-overview {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 15px;
+}
+
+.ops-income-primary {
+  position: relative;
+  padding: 18px 16px 12px !important;
+  background: #fbfcff;
+}
+
+.ops-income-number {
+  justify-self: start;
+  padding: 5px 11px;
+  border: 1px solid #a9c4ff;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #075bd7;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ops-income-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid #d8e1ee;
+  color: #0a1730;
+  font-size: 12px;
+}
+
+.ops-income-total strong { color: #0750c8; font-size: 14px; }
+.ops-income-grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  border: 1px solid #9bbdff;
+  border-radius: 9px;
+  background: #edf4ff;
+  color: #123663;
+  font-size: 12px;
+}
+
+.ops-income-grand-total strong { color: #0647b3; font-size: 15px; }
+
 .ops-credit-detail { gap: 18px; }
 .ops-inline-calculation {
   margin-top: 10px;
@@ -1775,4 +1831,5 @@ th{font-size:11.5px!important;}
   .ops-solicitud-toolbar > div{width:100%;margin-left:0;flex-wrap:wrap;gap:10px;}
   .ops-consultation-grid{grid-template-columns:1fr 1fr;}
   .ops-result-table{grid-template-columns:repeat(5,minmax(100px,1fr));overflow-x:auto;}
+  .ops-income-overview{grid-template-columns:1fr;}
 }
