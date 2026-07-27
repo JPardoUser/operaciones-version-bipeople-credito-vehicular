@@ -1148,12 +1148,7 @@ function opsCommentsHtml() {
 function opsSolicitudContent() {
   const brand = currentCase.concesionario === 'TOYOTA' ? 'Toyota' : 'Hyundai';
   const model = currentCase.concesionario === 'TOYOTA' ? 'Corolla' : 'Accent';
-  const checklistItems = [
-    {title:'FILE DE CONTRATOS', files:[`File_de_contratos_${currentCase.solicitud}.pdf`]},
-    {title:'COTIZACIÓN', files:[`Cotizacion_${currentCase.solicitud}.pdf`]},
-    {title:'CARTA DE CARACTERÍSTICAS', files:[`Carta_de_caracteristicas_${currentCase.solicitud}.pdf`]},
-    {title:'SUSTENTO CUOTA INICIAL', files:[`Sustento_cuota_inicial_${currentCase.solicitud}.pdf`]}
-  ];
+  const checklist = currentCase.checklist2 || ['S01.ORH.FR.007-Acta de Entrega - Recepción de CargoV02jp[F].pdf'];
   const clientParts = String(currentCase.cliente || '').trim().split(/\s+/);
   const clientNames = currentCase.solicitud === 'EFE004' ? 'Juan' : clientParts.slice(0, Math.max(1, clientParts.length - 2)).join(' ');
   const clientPaternal = currentCase.solicitud === 'EFE004' ? 'Pérez' : (clientParts.at(-2) || '—');
@@ -1161,16 +1156,33 @@ function opsSolicitudContent() {
   const hasDeclaredIncome = Number(currentCase.ingresoDeclarado || 0) > 0;
   const declaredIncome = hasDeclaredIncome ? `S/ ${Number(currentCase.ingresoDeclarado).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}` : '';
   const estimatedIncome = `S/ ${Number(currentCase.ingresoEstimado || 5850).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  const incomeCategory = currentCase.tipoCategoriaIngreso || '5ta categoría';
+  const normalizedIncomeCategory = normalize(incomeCategory);
+  const annualizedSales = Array.isArray(currentCase.ventasAnualizadas) ? currentCase.ventasAnualizadas.slice(0, 2) : [];
+  const showsAnnualizedSales = (normalizedIncomeCategory === '3ra-categoria' || normalizedIncomeCategory === 'sin-categoria') && annualizedSales.length > 0;
+  const propertyHolder = currentCase.tarjetaPropiedad || 'Titular';
+  const thirdPartyFields = normalize(propertyHolder) === 'tercero'
+    ? `${opsReviewField('Nombres del tercero', currentCase.terceroNombres || '—')}${opsReviewField('Apellido paterno del tercero', currentCase.terceroApellidoPaterno || '—')}${opsReviewField('Apellido materno del tercero', currentCase.terceroApellidoMaterno || '—')}`
+    : '';
+  const jointIndicator = currentCase.mancomunaIngresos !== undefined
+    ? opsReviewField('Indicador de mancomunación', currentCase.mancomunaIngresos ? 'Sí' : 'No')
+    : '';
+  const newPreapprovedAmount = hasDeclaredIncome && Number(currentCase.ingresoDeclarado) > Number(currentCase.ingresoEstimado || 0)
+    ? (currentCase.nuevoMontoPreaprobado || 'S/ 280,000.00')
+    : '';
+  const annualizedSalesHtml = showsAnnualizedSales
+    ? `<section><h3>VENTAS ANUALIZADAS DE LOS DOS AÑOS REGISTRADOS</h3>${annualizedSales.map(sale => `<div class="ops-review-grid ops-annualized-row">${opsReviewField('Año', sale.anio)}${opsReviewField('Moneda', sale.moneda)}${opsReviewField('Monto anual', sale.monto)}${opsReviewField('Tipo de ingreso o venta', sale.tipoIngresoVenta)}</div>`).join('')}</section>`
+    : '';
   return `
     <section class="ops-solicitud-toolbar"><button type="button" onclick="document.getElementById('backToInbox').click()" aria-label="Regresar a bandeja">‹</button><h1>Solicitud</h1><div><b>Carretera: <span>${escapeOpsReview(currentCase.carretera)}</span></b><b>ID Solicitud: <span>${escapeOpsReview(currentCase.solicitud)}</span></b><em>${escapeOpsReview(String(currentCase.estado || 'Pendiente').toUpperCase())}</em></div></section>
     <details class="ops-consultation-card" open><summary><strong>DATOS DE CONSULTA</strong><span>Ver detalle</span></summary><div class="ops-consultation-grid"><div class="qualified"><small>Resultado de calificación</small><strong>CALIFICA</strong></div><div><small>Monto preaprobado</small><strong>S/ 250,000.00</strong></div><div><small>Cuota inicial mínima</small><strong>10%</strong></div><div><small>Plazo máximo</small><strong>60 meses</strong></div><div><small>Segmento de riesgo</small><strong>PREFERENTE</strong></div><div><small>Ingreso estimado</small><strong>S/ 5,850.00</strong></div><div><small>PEP</small><strong>No aplica</strong></div><div><small>PLAFT</small><strong>Sin observaciones</strong></div></div></details>
     <section class="ops-review-card"><h2>DATOS DE CLIENTE</h2>
-      <details class="ops-executive-accordion"><summary><span>Titular<br><strong>${escapeOpsReview(currentCase.cliente)}</strong></span><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><h3>DATOS PERSONALES</h3><div class="ops-review-grid">${opsReviewField('Tipo de documento','DNI')}${opsReviewField('Número de documento',currentCase.documento)}${opsReviewField('Nombres',clientNames)}${opsReviewField('Apellido paterno',clientPaternal)}${opsReviewField('Apellido materno',clientMaternal)}${opsReviewField('Género','Masculino')}${opsReviewField('Fecha de nacimiento','11/05/1995')}${opsReviewField('Estado civil',currentCase.estadoCivil)}${opsReviewField('País de nacimiento','Peruano')}${opsReviewField('País de residencia','Permanente')}${opsReviewField('País de nacionalidad','Peruano')}</div></section><section><h3>DATOS DE CONTACTO</h3><div class="ops-review-grid">${opsReviewField('Teléfono','987458899')}${opsReviewField('Correo electrónico','efectiva@efectibank.com.pe')}</div></section><section><h3>DIRECCIÓN DOMICILIARIA · VALIDADA</h3><div class="ops-review-grid">${opsReviewField('Departamento','LIMA')}${opsReviewField('Provincia','LIMA')}${opsReviewField('Distrito','MIRAFLORES')}${opsReviewField('Dirección','av. Las pruebas 123')}</div></section><section><h3>DATOS LABORALES</h3><div class="ops-review-grid">${opsReviewField('Categoría laboral','Dependiente')}${opsReviewField('RUC de empleador','20705695330')}${opsReviewField('Nombre centro laboral','Grupo gloria')}${opsReviewField('Dirección','av. los jazmines 123')}${opsReviewField('Giro o actividad','Comercio')}${opsReviewField('Cargo','Subgerente')}${opsReviewField('Fecha ingreso laboral','01/01/2020')}${opsReviewField('Tipo moneda ingreso','Soles (S/)')}${opsReviewField('Ingresos netos mensuales','3500.00')}</div></section></div></details>
-      ${hasDeclaredIncome ? `<details class="ops-executive-accordion ops-income-accordion"><summary><strong>INGRESOS</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-income-body"><div class="ops-income-overview">${opsReviewField('Ingreso estimado',estimatedIncome)}${opsReviewField('Ingreso declarado (Soles)',declaredIncome)}${opsReviewField('Condiciones del piloto',currentCase.cumplePiloto ? 'Sí, cumple las condiciones del piloto' : 'No cumple las condiciones del piloto')}</div><section class="ops-income-primary"><h3>INGRESOS PRIMARIOS TITULAR</h3><span class="ops-income-number">Ingreso 1</span><div class="ops-review-grid">${opsReviewField('Tipo de categoría','5ta categoría')}${opsReviewField('Perfil','Formal')}${opsReviewField('Situación laboral','Dependiente')}${opsReviewField('Fecha de ingreso laboral','01/01/2021')}${opsReviewField('RUC del empleador','20105698330')}${opsReviewField('Ingreso neto mensual',declaredIncome)}${opsReviewField('¿Ingreso anualizado?','No')}</div><div class="ops-income-total"><b>Total ingresos titular:</b><strong>${declaredIncome}</strong></div></section><div class="ops-income-grand-total"><span>Total de ingresos declarados</span><strong>${declaredIncome}</strong></div></div></details>` : `<div class="ops-income-disabled"><strong>INGRESOS</strong><span>No se declaró ingresos</span></div>`}
-      <details class="ops-executive-accordion"><summary><strong>DATOS DE VEHÍCULO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><div class="ops-review-grid">${opsReviewField('Estado vehículo','Nuevo')}${opsReviewField('Concesionario',currentCase.concesionario)}${opsReviewField('Sucursal',currentCase.tienda)}${opsReviewField('Tipo Doc. vendedor','DNI')}${opsReviewField('N° Doc. vendedor','748578966')}${opsReviewField('Nombre completo vendedor','Alonso Gonzales Romero')}${opsReviewField('Marca',brand)}${opsReviewField('Modelo',model)}${opsReviewField('Año modelo','2026')}${opsReviewField('Tarjeta propiedad a nombre de','Titular')}${opsReviewField('Color','Plata Metálico')}${opsReviewField('Tipo de vehículo','Automóvil')}${opsReviewField('VIN','BAIDAA3G512345678')}${opsReviewField('N° de motor','2ZR-458796321')}</div></section></div></details>
-      <details class="ops-executive-accordion"><summary><strong>DATOS DEL CRÉDITO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-credit-detail"><section><div class="ops-review-grid">${opsReviewField('Producto','Crédito Vehicular')}${opsReviewField('Campaña comercial','SUV Mayo 2026')}${opsReviewField('Moneda Financiamiento','Soles (S/)')}${opsReviewField('Tipo Cambio','3.78')}${opsReviewField('Precio Vehículo','$ 15,000.00')}${opsReviewField('Cuota Inicial','$ 6,500.00')}${opsReviewField('Día Pago','03')}${opsReviewField('Total Financiamiento','S/ 32,130.00')}</div><div class="ops-inline-calculation"><h3>Resultado del cálculo</h3><p>Resultado seleccionado por el ejecutivo para continuar con la solicitud.</p><div class="ops-result-table"><b>Plazo</b><b>TEA</b><b>Cuota</b><b>CME</b><b>Capacidad</b><span>60 meses</span><span>12.80%</span><span>S/. 500.00</span><span>S/. 3,150.00</span><span class="ok">Cumple</span></div></div></section><section><h3>GASTOS Y PLAN GPS</h3><div class="ops-review-grid">${opsReviewField('Gastos Notariales','Sí')}${opsReviewField('Gastos Registrales (sábana)','Sí')}${opsReviewField('Gastos Delivery Firma','Sí')}${opsReviewField('Plan GPS','Premium')}${opsReviewField('Gastos Inclusión GPS (cálculo)','$ 650.00')}${opsReviewField('Cuotas Dobles','Sí')}${opsReviewField('Meses de cuotas dobles','Agosto / Enero')}${opsReviewField('Incluir Portes','No')}</div></section><section><h3>SEGUROS</h3><div class="ops-review-grid">${opsReviewField('Seguro Vehicular','Con seguro')}${opsReviewField('Costo Seguro Vehicular','12.10%')}${opsReviewField('Seguro Desgravamen','Con seguro')}${opsReviewField('Tipo de seguro desgravamen','Individual')}</div></section></div></details>
+      <details class="ops-executive-accordion"><summary><span>Titular<br><strong>${escapeOpsReview(currentCase.cliente)}</strong></span><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><h3>DATOS PERSONALES</h3><div class="ops-review-grid">${opsReviewField('Tipo de documento','DNI')}${opsReviewField('Número de documento',currentCase.documento)}${opsReviewField('Nombres',clientNames)}${opsReviewField('Apellido paterno',clientPaternal)}${opsReviewField('Apellido materno',clientMaternal)}${opsReviewField('Género','Masculino')}${opsReviewField('Fecha de nacimiento','11/05/1995')}${opsReviewField('Profesión',currentCase.profesion || 'INGENIERO')}${opsReviewField('Estado civil',currentCase.estadoCivil)}${opsReviewField('País de nacimiento','Peruano')}${opsReviewField('País de residencia','Permanente')}${jointIndicator}</div></section><section><h3>DATOS DE CONTACTO TITULAR</h3><div class="ops-review-grid">${opsReviewField('Teléfono','987458899')}${opsReviewField('Correo electrónico','efectiva@efectibank.com.pe')}</div></section><section><h3>DIRECCIÓN DOMICILIARIA · VALIDADA</h3><div class="ops-review-grid">${opsReviewField('Tipo de propiedad',currentCase.tipoPropiedad || 'Propia')}${opsReviewField('Antigüedad domiciliaria (años)',currentCase.antiguedadDomiciliariaAnios || '5')}${opsReviewField('Antigüedad domiciliaria (meses)',currentCase.antiguedadDomiciliariaMeses || '2')}${opsReviewField('Departamento','LIMA')}${opsReviewField('Provincia','LIMA')}${opsReviewField('Distrito','MIRAFLORES')}${opsReviewField('Dirección','av. Las pruebas 123')}${opsReviewField('Referencia de la dirección',currentCase.referenciaDireccion || 'Frente al parque principal')}</div></section><section><h3>DATOS LABORALES</h3><div class="ops-review-grid">${opsReviewField('Categoría laboral','Dependiente')}${opsReviewField('RUC de empleador','20705695330')}${opsReviewField('Nombre centro laboral','Grupo gloria')}${opsReviewField('Dirección','av. los jazmines 123')}${opsReviewField('Giro o actividad','Comercio')}${opsReviewField('Cargo','Subgerente')}${opsReviewField('Fecha ingreso laboral','01/01/2020')}${opsReviewField('Tipo moneda ingreso','Soles (S/)')}${opsReviewField('Ingresos netos mensuales','3500.00')}</div></section>${annualizedSalesHtml}</div></details>
+      ${hasDeclaredIncome ? `<details class="ops-executive-accordion ops-income-accordion"><summary><strong>INGRESOS</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-income-body"><div class="ops-income-overview">${opsReviewField('Ingreso estimado',estimatedIncome)}${opsReviewField('Ingreso declarado (Soles)',declaredIncome)}${opsReviewField('Condiciones del piloto',currentCase.cumplePiloto ? 'Sí, cumple las condiciones del piloto' : 'No cumple las condiciones del piloto')}</div><section class="ops-income-primary"><h3>INGRESOS PRIMARIOS TITULAR</h3><span class="ops-income-number">Ingreso 1</span><div class="ops-review-grid">${opsReviewField('Tipo de categoría',incomeCategory)}${opsReviewField('Perfil','Formal')}${opsReviewField('Situación laboral','Dependiente')}${opsReviewField('Fecha de ingreso laboral','01/01/2021')}${opsReviewField('Ingreso neto mensual',declaredIncome)}${opsReviewField('Tipo de ingreso declarado',currentCase.tipoIngresoDeclarado || 'Con papeles')}</div><div class="ops-income-total"><b>Total ingresos titular:</b><strong>${declaredIncome}</strong></div></section><div class="ops-income-grand-total"><span>Total de ingresos declarados</span><strong>${declaredIncome}</strong></div></div></details>` : `<div class="ops-income-disabled"><strong>INGRESOS</strong><span>No se declaró ingresos</span></div>`}
+      <details class="ops-executive-accordion"><summary><strong>DATOS DE VEHÍCULO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><div class="ops-review-grid">${opsReviewField('Estado vehículo','Nuevo')}${opsReviewField('Concesionario',currentCase.concesionario)}${opsReviewField('Sucursal',currentCase.tienda)}${opsReviewField('Tipo Doc. vendedor','DNI')}${opsReviewField('N° Doc. vendedor','748578966')}${opsReviewField('Nombre completo vendedor','Alonso Gonzales Romero')}${opsReviewField('Marca',brand)}${opsReviewField('Modelo',model)}${opsReviewField('Año modelo','2026')}${opsReviewField('Tarjeta propiedad a nombre de',propertyHolder)}${thirdPartyFields}${opsReviewField('Color','Plata Metálico')}${opsReviewField('Tipo de vehículo','Automóvil')}${opsReviewField('VIN','BAIDAA3G512345678')}${opsReviewField('N° de motor','2ZR-458796321')}</div></section></div></details>
+      <details class="ops-executive-accordion"><summary><strong>DATOS DEL CRÉDITO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-credit-detail"><section><div class="ops-review-grid">${opsReviewField('Producto','Crédito Vehicular')}${opsReviewField('Campaña comercial','SUV Mayo 2026')}${opsReviewField('Moneda Financiamiento','Soles (S/)')}${opsReviewField('Tipo Cambio','3.78')}${opsReviewField('Precio Vehículo','$ 15,000.00')}${opsReviewField('Inicial','$ 6,500.00')}${opsReviewField('Día Pago','03')}${opsReviewField('Total Financiamiento','S/ 32,130.00')}${newPreapprovedAmount ? opsReviewField('Nuevo monto preaprobado',newPreapprovedAmount) : ''}</div><div class="ops-inline-calculation"><h3>Resultado del cálculo</h3><p>Resultado seleccionado por el ejecutivo para continuar con la solicitud.</p><div class="ops-result-table"><b>Plazo</b><b>TEA</b><b>Cuota</b><b>CME</b><b>Capacidad</b><span>60 meses</span><span>12.80%</span><span>S/. 500.00</span><span>S/. 3,150.00</span><span class="ok">Cumple</span></div></div></section><section><h3>GASTOS Y PLAN GPS</h3><div class="ops-review-grid">${opsReviewField('Gastos Notariales','Sí')}${opsReviewField('Gastos Registrales (sábana)','Sí')}${opsReviewField('Toma de firmas','Sí, financiado')}${opsReviewField('GPS financiado',currentCase.gpsFinanciado || 'Sí, financiado')}${opsReviewField('Plan GPS','Premium')}${opsReviewField('Cuotas Dobles','Sí')}${opsReviewField('Meses de cuotas dobles','Agosto / Enero')}${opsReviewField('Costo por envío de estado de cuenta',currentCase.costoEnvioEstadoCuenta || 'No')}</div></section><section><h3>SEGUROS</h3><div class="ops-review-grid">${opsReviewField('Seguro Vehicular','Con seguro')}${opsReviewField('Costo Seguro Vehicular','12.10%')}${opsReviewField('Seguro Desgravamen','Con seguro')}${opsReviewField('Tipo de seguro desgravamen','Individual')}</div></section></div></details>
     </section>
-    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-accordions">${checklistItems.map((item,itemIndex)=>`<details class="ops-checklist-item"><summary><strong>${escapeOpsReview(item.title)}</strong><span>Ver detalle</span></summary><div class="ops-checklist-item-body">${item.files.map((file,fileIndex)=>`<button class="ops-checklist-document" type="button" data-file="${escapeOpsReview(file)}" data-number="${itemIndex + fileIndex + 1}" onclick="openDocumentPreview(this.dataset.file, Number(this.dataset.number))"><span>▤</span><span><strong>${escapeOpsReview(file)}</strong><small>Click para previsualizar el documento</small></span><b>Ver archivo</b></button>`).join('')}</div></details>`).join('')}</div></section>
+    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-files">${checklist.map(file=>`<div><span>▤ ${escapeOpsReview(file)}</span><button type="button" data-file="${escapeOpsReview(file)}" onclick="downloadOpsDocument(this.dataset.file)">↓ Descargar</button></div>`).join('')}</div></section>
     <section class="ops-review-card"><h2>COMENTARIOS</h2><p>Historial registrado durante el proceso de la solicitud.</p><div class="ops-comments-history">${opsCommentsHtml()}</div></section>`;
 }
 
@@ -1256,13 +1268,28 @@ $('detailSubtitle').textContent=`${currentCase.cliente} · ${currentCase.documen
   if ($('opsVehiculoTienda')) $('opsVehiculoTienda').value = currentCase.tienda;
   if ($('opsVehiculoEjecutivo')) $('opsVehiculoEjecutivo').value = currentCase.usuario;
 
-  // La Solicitud es la única pantalla de consulta, incluso para casos activados.
-  document.querySelector('.detail-header')?.classList.add('hidden');
-  document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
-  $('stageAPanel').classList.remove('hidden');
-  $('detailHeaderTitle').textContent = "Solicitud";
-  $('detailSubtitle').textContent = 'Expediente recibido en Operaciones';
-  renderExecutiveOpsReview();
+  // Render proper screen layout and timelines
+  if (currentCase.estado === 'Activado') {
+    document.querySelector('.detail-header')?.classList.remove('hidden');
+    document.querySelector('.ops-main-layout')?.classList.remove('executive-review-mode');
+    if($('btnAprobarActivarBantotal')) $('btnAprobarActivarBantotal').disabled = true;
+    if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
+    if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
+    
+    $('stageAPanel').classList.add('hidden');
+    $('stageBPanel').classList.remove('hidden');
+    $('detailHeaderTitle').textContent = "Activación Bantotal";
+    
+    populateStageB();
+  } else {
+    document.querySelector('.detail-header')?.classList.add('hidden');
+    document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
+    $('stageAPanel').classList.remove('hidden');
+    $('stageBPanel').classList.add('hidden');
+    $('detailHeaderTitle').textContent = "Solicitud";
+    $('detailSubtitle').textContent = 'Expediente recibido en Operaciones · Estado Pendiente';
+    renderExecutiveOpsReview();
+  }
 
   renderObservationBox();
   renderTracking();
@@ -1442,6 +1469,8 @@ observarModal?.addEventListener('click', e => {
 });
 
 $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
+  showModal('Activación Exitosa', `Se aprobó la solicitud y se activó exitosamente en Bantotal.`);
+  
   currentCase.estado = 'Activado';
   currentCase.fechaActivacion = getFormattedNow();
   currentCase.analistaActivacion = usuarioOperacionesSesion;
@@ -1449,6 +1478,12 @@ $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
   currentCase.historialOperaciones.push({rol:'Analista de Operaciones',usuario:usuarioOperacionesSesion,fecha:currentCase.fechaActivacion,comentario:'Solicitud aprobada y activada en Bantotal.'});
   saveCases();
   fillAnalistaFilter();
+  
+  $('stageAPanel').classList.add('hidden');
+  $('stageBPanel').classList.remove('hidden');
+  $('detailHeaderTitle').textContent = "Activación Bantotal";
+  
+  populateStageB();
   renderTracking();
   applyFilters();
   
@@ -1456,8 +1491,10 @@ $('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
   if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
   if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
 
-  showModal('Activación Exitosa', `Se aprobó la solicitud y se activó exitosamente en Bantotal.`, 'info', false, regresarABandeja);
+  window.scrollTo({top:0,behavior:'smooth'});
 });
+
+$('btnRegresarBandejaActivacion')?.addEventListener('click',intentarRegresarABandeja);
 
 let activePreviewName = '';
 let activePreviewNum = 1;
