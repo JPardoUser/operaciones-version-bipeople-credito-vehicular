@@ -38,6 +38,13 @@ const bandejaView=$('bandejaView'),detailView=$('detailView'),opsTabContent=$('o
 const modal=$('modal'),modalTitle=$('modalTitle'),modalContent=$('modalContent');let currentCase=null;let checklistStatuses=[];
 let mostrarConfirmacionRegresoCasoTomado = false;
 const usuarioOperacionesSesion = 'AUGCHA';
+const nombresAnalistasOperaciones = {
+  AUGCHA: 'Augusto Chávez'
+};
+
+function obtenerNombreAnalistaOperaciones(usuario) {
+  return nombresAnalistasOperaciones[usuario] || usuario || 'Analista de Operaciones';
+}
 
 // --- Lógica del Splash Screen ---
 (function() {
@@ -390,7 +397,7 @@ function renderObservationBox() {
     `;
   } else {
     // Show buttons if not approved/activated/rejected
-    const isFinalState = currentCase && (currentCase.estado === 'Activado' || currentCase.estado === 'Rechazado');
+    const isFinalState = currentCase && ['Aprobado', 'Activado', 'Observado', 'Rechazado'].includes(currentCase.estado);
     if (btnAprobar) {
       if (isFinalState) {
         btnAprobar.classList.add('hidden');
@@ -925,50 +932,6 @@ function updateGuaranteeVisibility(){
   }
 }
 
-function populateStageB() {
-  if (!currentCase) return;
-  const sol = currentCase.solicitud;
-  const concessionaire = currentCase.concesionario;
-  const brand = concessionaire === 'TOYOTA' ? 'Toyota' : 'Hyundai';
-  const model = concessionaire === 'TOYOTA' ? 'Fortuner SRX' : 'Tucson';
-  const vehName = brand === 'Toyota' ? 'Toyota Fortuner SRX 2024' : 'Hyundai Tucson 2024';
-  
-  const opNum = `OP-${sol}-123456`;
-  const nowStr = '23/05/2026 18:00';
-  const montoVal = 'S/ 138,000.00';
-  const tasaVal = '14.90%';
-  const plazoVal = '36 cuotas';
-  const cuotaVal = 'S/ 4,123.00';
-
-  if ($('btSolicitud')) $('btSolicitud').value = sol;
-  if ($('btTipoDoc')) $('btTipoDoc').value = 'DNI';
-  if ($('btNumDoc')) $('btNumDoc').value = currentCase.documento;
-  if ($('btCliente')) $('btCliente').value = currentCase.cliente;
-  if ($('btProducto')) $('btProducto').value = 'Crédito vehicular PN';
-  if ($('btMonto')) $('btMonto').value = montoVal;
-  if ($('btPlazo')) $('btPlazo').value = plazoVal;
-  if ($('btCuota')) $('btCuota').value = cuotaVal;
-  if ($('btTasa')) $('btTasa').value = tasaVal;
-  if ($('btMoneda')) $('btMoneda').value = 'Soles (S/)';
-  if ($('btVehiculo')) $('btVehiculo').value = vehName;
-  if ($('btEstado')) $('btEstado').value = 'Nuevo';
-  if ($('btMarca')) $('btMarca').value = brand;
-  if ($('btModelo')) $('btModelo').value = model;
-  if ($('btAnioModelo')) $('btAnioModelo').value = '2024';
-  if ($('btTipoVehiculo')) $('btTipoVehiculo').value = 'Camioneta SUV';
-  if ($('btNumMotor')) $('btNumMotor').value = '2GD-FTV-987654';
-  if ($('btVin')) $('btVin').value = 'BAIDAA3G512345678';
-
-  if ($('arOperacion')) $('arOperacion').value = opNum;
-  if ($('arFechaHora')) $('arFechaHora').value = nowStr;
-  if ($('arMonto')) $('arMonto').value = montoVal;
-  if ($('arTasa')) $('arTasa').value = tasaVal;
-
-  generateCronograma(montoVal, plazoVal, cuotaVal, tasaVal);
-
-  if ($('bantotalSection')) $('bantotalSection').classList.remove('hidden');
-  if ($('activationResultSection')) $('activationResultSection').classList.remove('hidden');
-}
 function updateRegisterGuaranteeButton(){
   const guarantee=$('guaranteeSection');
   const registerButton=$('btnRegisterGuarantee');
@@ -1002,133 +965,6 @@ function downloadDocumentPdf(documentName,number){
   URL.revokeObjectURL(link.href);
 }
 
-function generateCronograma(monto, plazo, cuotaVal, tea) {
-  const tbody = $('cronogramaBody');
-  if (!tbody) return;
-  
-  const cuota = parseFloat(cuotaVal.replace(/[^0-9.]/g, '')) || 4123.00;
-  const totalAmort = parseFloat(monto.replace(/[^0-9.]/g, '')) || 138000.00;
-  const numCuotas = parseInt(plazo) || 36;
-  
-  const segMensual = (totalAmort * 0.00067).toFixed(2);
-  const totalSeguro = (parseFloat(segMensual) * numCuotas).toFixed(2);
-  const totalInteres = (cuota * numCuotas - totalAmort - parseFloat(totalSeguro)).toFixed(2);
-  
-  $('cronAmortizacion').textContent = `S/ ${totalAmort.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('cronInteres').textContent = `S/ ${parseFloat(totalInteres).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('cronSeguro').textContent = `S/ ${parseFloat(totalSeguro).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('cronMontoFinanciado').textContent = `S/ ${totalAmort.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('cronTotalPagar').textContent = `S/ ${(cuota * numCuotas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  $('cronCuotasCount').textContent = numCuotas;
-  
-  let html = '';
-  let saldo = totalAmort;
-  
-  const formatCur = (v) => v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  
-  const getRowHtml = (n) => {
-    const date = new Date(2026, 5 + n, 22);
-    const dateStr = date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    
-    const factor = (numCuotas - n) / numCuotas;
-    const intCuota = parseFloat((totalInteres / numCuotas) * (factor * 1.5 + 0.25));
-    const segCuota = parseFloat(segMensual);
-    const amortCuota = cuota - intCuota - segCuota;
-    
-    saldo -= amortCuota;
-    const dispSaldo = saldo < 0 || n === numCuotas ? 0 : saldo;
-    
-    return `
-      <tr>
-        <td>${n}</td>
-        <td>${dateStr}</td>
-        <td>${formatCur(cuota)}</td>
-        <td>${formatCur(amortCuota)}</td>
-        <td>${formatCur(intCuota)}</td>
-        <td>${formatCur(segCuota)}</td>
-        <td>${formatCur(cuota)}</td>
-        <td class="bold-capital">S/ ${formatCur(dispSaldo)}</td>
-      </tr>
-    `;
-  };
-  
-  let row1 = '', row2 = '', row3 = '', row4 = '', row5 = '', rowLast = '';
-  saldo = totalAmort;
-  for (let i = 1; i <= numCuotas; i++) {
-    const rowHtml = getRowHtml(i);
-    if (i === 1) row1 = rowHtml;
-    if (i === 2) row2 = rowHtml;
-    if (i === 3) row3 = rowHtml;
-    if (i === 4) row4 = rowHtml;
-    if (i === 5) row5 = rowHtml;
-    if (i === numCuotas) rowLast = rowHtml;
-  }
-  
-  html = row1 + row2 + row3 + row4 + row5 + `
-    <tr>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-  ` + rowLast;
-  
-  tbody.innerHTML = html;
-  if ($('cronogramaSummaryText')) {
-    $('cronogramaSummaryText').textContent = `${numCuotas} cuotas — S/ ${formatCur(cuota)} / mes — Primer vencimiento: 22/06/2026`;
-  }
-}
-
-function downloadCronogramaPdf() {
-  const sol = currentCase ? currentCase.solicitud : 'EFE001';
-  const cli = currentCase ? currentCase.cliente : 'Juan Carlos Pérez Rojas';
-  const doc = currentCase ? currentCase.documento : '71865887';
-  
-  let content = `==================================================\n`;
-  content += `           CRONOGRAMA DE PAGOS FINAL\n`;
-  content += `==================================================\n`;
-  content += `Solicitud: ${sol}\n`;
-  content += `Cliente: ${cli}\n`;
-  content += `Documento: ${doc}\n`;
-  content += `Producto: Crédito vehicular PN\n`;
-  content += `Fecha de activación: ${new Date().toLocaleDateString('es-PE')} ${new Date().toLocaleTimeString('es-PE')}\n`;
-  content += `==================================================\n\n`;
-  content += `N° Cuota | Fecha Pago | Cuota (S/) | Amort. (S/) | Interes (S/) | Seguro (S/) | Saldo (S/)\n`;
-  content += `---------------------------------------------------------------------------------------\n`;
-  
-  const rows = document.querySelectorAll('#cronogramaBody tr');
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    if (cells.length >= 8 && cells[0].textContent !== '...') {
-      content += `${cells[0].textContent.trim().padEnd(8)} | ${cells[1].textContent.trim().padEnd(10)} | ${cells[2].textContent.trim().padEnd(10)} | ${cells[3].textContent.trim().padEnd(11)} | ${cells[4].textContent.trim().padEnd(12)} | ${cells[5].textContent.trim().padEnd(11)} | ${cells[7].textContent.trim()}\n`;
-    } else if (cells.length >= 8) {
-      content += `...      | ...        | ...        | ...         | ...          | ...         | ...\n`;
-    }
-  });
-  
-  content += `\n==================================================\n`;
-  content += `RESUMEN DE CRONOGRAMA\n`;
-  content += `Total amortizacion: ${$('cronAmortizacion').textContent}\n`;
-  content += `Total interes: ${$('cronInteres').textContent}\n`;
-  content += `Total seguro: ${$('cronSeguro').textContent}\n`;
-  content += `Monto financiado: ${$('cronMontoFinanciado').textContent}\n`;
-  content += `Total a pagar: ${$('cronTotalPagar').textContent}\n`;
-  content += `==================================================\n`;
-
-  const blob = new Blob([content], { type: 'text/plain' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `Cronograma_Final_${sol}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(link.href);
-}
-
 function escapeOpsReview(value) {
   return String(value ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
@@ -1137,12 +973,90 @@ function opsReviewField(label, value) {
   return `<div class="ops-review-field"><small>${label}</small><strong>${escapeOpsReview(value)}</strong></div>`;
 }
 
-function opsCommentsHtml() {
-  const comments = currentCase.comentariosExpediente || [
-    {rol:'Ejecutivo financiero',usuario:currentCase.usuario,fecha:formatDate(currentCase.fecha),comentario:'Expediente completo y enviado a Operaciones.'},
-    {rol:'Analista de riesgos',usuario:'María Fernanda Salazar',fecha:formatDate(currentCase.fecha),decision:'Aprobado',comentario:'Evaluación de Riesgos aprobada.'}
+function obtenerComentariosBaseSolicitud(solicitud) {
+  if (Array.isArray(solicitud.comentariosExpediente)) return [...solicitud.comentariosExpediente];
+  return [
+    {rol:'Ejecutivo financiero',usuario:solicitud.usuario,fecha:formatDate(solicitud.fecha),comentario:'Expediente completo y enviado a Operaciones.'},
+    {rol:'Analista de riesgos',usuario:'María Fernanda Salazar',fecha:formatDate(solicitud.fecha),decision:'Aprobado',comentario:'Evaluación de Riesgos aprobada.'}
   ];
-  return comments.map(comment => `<article class="ops-history-comment ${normalize(comment.rol).includes('riesgos')?'risk':''}"><p><b>${escapeOpsReview(comment.rol)}:</b> ${escapeOpsReview(comment.usuario)}</p><p><b>Fecha y hora:</b> ${escapeOpsReview(comment.fecha)}</p>${comment.decision?`<p><b>Decisión:</b> ${escapeOpsReview(comment.decision)}</p>`:''}<p><b>Comentario:</b> ${escapeOpsReview(comment.comentario)}</p></article>`).join('');
+}
+
+function registrarAprobacionEnComentarios(solicitud) {
+  if (!solicitud || !['Aprobado', 'Activado'].includes(solicitud.estado)) return false;
+
+  const comments = obtenerComentariosBaseSolicitud(solicitud);
+  const registroAprobacionVisible = comments.find(comment =>
+    normalize(comment.rol || '').includes('operaciones') &&
+    (comment.tipo === 'aprobacion' || comment.decision === 'Aprobado')
+  );
+  const aprobacionOperaciones = [...(solicitud.historialOperaciones || [])].reverse().find(registro =>
+    registro.tipo === 'aprobacion' ||
+    registro.decision === 'Aprobado' ||
+    /solicitud aprobada/i.test(String(registro.comentario || ''))
+  );
+  const usuarioAnalista = solicitud.analistaActivacion || aprobacionOperaciones?.usuario || solicitud.analistaOperaciones;
+  const comentarioHistorial = String(aprobacionOperaciones?.comentario || '').trim();
+  const comentarioAlternativo = comentarioHistorial &&
+    !/^solicitud aprobada exitosamente[.!]?$/i.test(comentarioHistorial) &&
+    !/bantotal/i.test(comentarioHistorial)
+      ? comentarioHistorial
+      : '';
+  const comentario = String(
+    solicitud.comentarioAprobacion ||
+    aprobacionOperaciones?.comentarioAprobacion ||
+    comentarioAlternativo ||
+    registroAprobacionVisible?.comentario ||
+    ''
+  ).trim().slice(0, 250);
+  const usuario = solicitud.nombreAnalistaActivacion || obtenerNombreAnalistaOperaciones(usuarioAnalista);
+  const fecha = solicitud.fechaActivacion || aprobacionOperaciones?.fecha || registroAprobacionVisible?.fecha || '—';
+
+  if (registroAprobacionVisible) {
+    let updated = false;
+    const updates = {
+      rol: 'Analista de operaciones',
+      usuario,
+      fecha,
+      tipo: 'aprobacion',
+      decision: 'Aprobado'
+    };
+    Object.entries(updates).forEach(([key, value]) => {
+      if (registroAprobacionVisible[key] !== value) {
+        registroAprobacionVisible[key] = value;
+        updated = true;
+      }
+    });
+    if (comentario && registroAprobacionVisible.comentario !== comentario) {
+      registroAprobacionVisible.comentario = comentario;
+      updated = true;
+    }
+    if (updated) solicitud.comentariosExpediente = comments;
+    return updated;
+  }
+
+  const registroComentario = {
+    rol: 'Analista de operaciones',
+    usuario,
+    fecha,
+    tipo: 'aprobacion',
+    decision: 'Aprobado'
+  };
+  if (comentario) registroComentario.comentario = comentario;
+  comments.push(registroComentario);
+  solicitud.comentariosExpediente = comments;
+  return true;
+}
+
+function opsCommentsHtml() {
+  if (registrarAprobacionEnComentarios(currentCase)) saveCases();
+  const comments = obtenerComentariosBaseSolicitud(currentCase);
+
+  return comments.map(comment => {
+    const esRiesgos = normalize(comment.rol || '').includes('riesgos');
+    const esOperaciones = normalize(comment.rol || '').includes('operaciones');
+    const comentario = String(comment.comentario || '').trim();
+    return `<article class="ops-history-comment ${esRiesgos?'risk':''}"><p><b>${escapeOpsReview(comment.rol)}:</b> ${escapeOpsReview(comment.usuario)}</p><p><b>Fecha y hora:</b> ${escapeOpsReview(comment.fecha)}</p>${comment.decision?`<p><b>Decisión:</b> ${escapeOpsReview(comment.decision)}</p>`:''}${comentario?`<p><b>${esOperaciones?'Comentarios':'Comentario'}:</b> ${escapeOpsReview(comentario)}</p>`:''}</article>`;
+  }).join('');
 }
 
 function opsSolicitudContent() {
@@ -1182,7 +1096,7 @@ function opsSolicitudContent() {
       <details class="ops-executive-accordion"><summary><strong>DATOS DE VEHÍCULO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body"><section><div class="ops-review-grid">${opsReviewField('Estado vehículo','Nuevo')}${opsReviewField('Concesionario',currentCase.concesionario)}${opsReviewField('Sucursal',currentCase.tienda)}${opsReviewField('Tipo Doc. vendedor','DNI')}${opsReviewField('N° Doc. vendedor','748578966')}${opsReviewField('Nombre completo vendedor','Alonso Gonzales Romero')}${opsReviewField('Marca',brand)}${opsReviewField('Modelo',model)}${opsReviewField('Año modelo','2026')}${opsReviewField('Tarjeta propiedad a nombre de',propertyHolder)}${thirdPartyFields}${opsReviewField('Color','Plata Metálico')}${opsReviewField('Tipo de vehículo','Automóvil')}${opsReviewField('VIN','BAIDAA3G512345678')}${opsReviewField('N° de motor','2ZR-458796321')}</div></section></div></details>
       <details class="ops-executive-accordion"><summary><strong>DATOS DEL CRÉDITO</strong><span class="ops-summary-actions"><em>Completo</em><b>Ver detalle</b></span></summary><div class="ops-accordion-body ops-credit-detail"><section><div class="ops-review-grid">${opsReviewField('Producto','Crédito Vehicular')}${opsReviewField('Campaña comercial','SUV Mayo 2026')}${opsReviewField('Moneda Financiamiento','Soles (S/)')}${opsReviewField('Tipo Cambio','3.78')}${opsReviewField('Precio Vehículo','$ 15,000.00')}${opsReviewField('Inicial','$ 6,500.00')}${opsReviewField('Día Pago','03')}${opsReviewField('Total Financiamiento','S/ 32,130.00')}${newPreapprovedAmount ? opsReviewField('Nuevo monto preaprobado',newPreapprovedAmount) : ''}</div><div class="ops-inline-calculation"><h3>Resultado del cálculo</h3><p>Resultado seleccionado por el ejecutivo para continuar con la solicitud.</p><div class="ops-result-table"><b>Plazo</b><b>TEA</b><b>Cuota</b><b>CME</b><b>Capacidad</b><span>60 meses</span><span>12.80%</span><span>S/. 500.00</span><span>S/. 3,150.00</span><span class="ok">Cumple</span></div></div></section><section><h3>GASTOS Y PLAN GPS</h3><div class="ops-review-grid">${opsReviewField('Gastos Notariales','Sí')}${opsReviewField('Gastos Registrales (sábana)','Sí')}${opsReviewField('Toma de firmas','Sí, financiado')}${opsReviewField('GPS financiado',currentCase.gpsFinanciado || 'Sí, financiado')}${opsReviewField('Plan GPS','Premium')}${opsReviewField('Cuotas Dobles','Sí')}${opsReviewField('Meses de cuotas dobles','Agosto / Enero')}${opsReviewField('Costo por envío de estado de cuenta',currentCase.costoEnvioEstadoCuenta || 'No')}</div></section><section><h3>SEGUROS</h3><div class="ops-review-grid">${opsReviewField('Seguro Vehicular','Con seguro')}${opsReviewField('Costo Seguro Vehicular','12.10%')}${opsReviewField('Seguro Desgravamen','Con seguro')}${opsReviewField('Tipo de seguro desgravamen','Individual')}</div></section></div></details>
     </section>
-    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-files">${checklist.map(file=>`<div><span>▤ ${escapeOpsReview(file)}</span><button type="button" data-file="${escapeOpsReview(file)}" onclick="downloadOpsDocument(this.dataset.file)">↓ Descargar</button></div>`).join('')}</div></section>
+    <section class="ops-review-card"><h2>CheckList 2</h2><p>Documentos enviados por el Ejecutivo en formato PDF.</p><div class="ops-checklist-files">${checklist.map((file,index)=>`<div class="ops-checklist-file-row"><span class="ops-checklist-file-name">▤ ${escapeOpsReview(file)}</span><div class="ops-checklist-file-actions"><button class="preview" type="button" data-ops-document-action="preview" data-file="${escapeOpsReview(file)}" data-document-number="${index+1}">👁 Previsualizar</button><button type="button" data-ops-document-action="download" data-file="${escapeOpsReview(file)}" data-document-number="${index+1}">↓ Descargar</button></div></div>`).join('')}</div></section>
     <section class="ops-review-card"><h2>COMENTARIOS</h2><p>Historial registrado durante el proceso de la solicitud.</p><div class="ops-comments-history">${opsCommentsHtml()}</div></section>`;
 }
 
@@ -1199,10 +1113,25 @@ function downloadOpsDocument(fileName) {
   setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+function bindOpsChecklistActions(container) {
+  container.querySelectorAll('[data-ops-document-action]').forEach(button => {
+    button.addEventListener('click', () => {
+      const fileName = button.dataset.file || 'documento.pdf';
+      const documentNumber = Number(button.dataset.documentNumber || 1);
+      if (button.dataset.opsDocumentAction === 'preview') {
+        openDocumentPreview(fileName, documentNumber);
+        return;
+      }
+      downloadOpsDocument(fileName);
+    });
+  });
+}
+
 function renderExecutiveOpsReview() {
   const container = $('executiveOpsReview');
   if (!container || !currentCase) return;
   container.innerHTML = opsSolicitudContent();
+  bindOpsChecklistActions(container);
   window.scrollTo({top:0,behavior:'auto'});
 }
 
@@ -1268,28 +1197,14 @@ $('detailSubtitle').textContent=`${currentCase.cliente} · ${currentCase.documen
   if ($('opsVehiculoTienda')) $('opsVehiculoTienda').value = currentCase.tienda;
   if ($('opsVehiculoEjecutivo')) $('opsVehiculoEjecutivo').value = currentCase.usuario;
 
-  // Render proper screen layout and timelines
-  if (currentCase.estado === 'Activado') {
-    document.querySelector('.detail-header')?.classList.remove('hidden');
-    document.querySelector('.ops-main-layout')?.classList.remove('executive-review-mode');
-    if($('btnAprobarActivarBantotal')) $('btnAprobarActivarBantotal').disabled = true;
-    if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
-    if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
-    
-    $('stageAPanel').classList.add('hidden');
-    $('stageBPanel').classList.remove('hidden');
-    $('detailHeaderTitle').textContent = "Activación Bantotal";
-    
-    populateStageB();
-  } else {
-    document.querySelector('.detail-header')?.classList.add('hidden');
-    document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
-    $('stageAPanel').classList.remove('hidden');
-    $('stageBPanel').classList.add('hidden');
-    $('detailHeaderTitle').textContent = "Solicitud";
-    $('detailSubtitle').textContent = 'Expediente recibido en Operaciones · Estado Pendiente';
-    renderExecutiveOpsReview();
-  }
+  // Todas las solicitudes, incluidas las aprobadas/activadas, se consultan
+  // desde la misma pantalla de Solicitud.
+  document.querySelector('.detail-header')?.classList.add('hidden');
+  document.querySelector('.ops-main-layout')?.classList.add('executive-review-mode');
+  $('stageAPanel').classList.remove('hidden');
+  $('detailHeaderTitle').textContent = "Solicitud";
+  $('detailSubtitle').textContent = `Expediente recibido en Operaciones · Estado ${estadoOperaciones(currentCase)}`;
+  renderExecutiveOpsReview();
 
   renderObservationBox();
   renderTracking();
@@ -1366,8 +1281,6 @@ $('filterDocumento').addEventListener('input',e=>{e.target.value=e.target.value.
 $('backToInbox').addEventListener('click',intentarRegresarABandeja);document.querySelectorAll('.ops-tab-btn').forEach(b=>b.addEventListener('click',()=>renderOpsTab(b.dataset.opsTab)));
 if($('btnObserveExecutive')) $('btnObserveExecutive').addEventListener('click',()=>showModal('Observación enviada','Se registró la observación y el caso será devuelto al ejecutivo para subsanación.'));
 
-if ($('btnDescargarCronograma')) $('btnDescargarCronograma').addEventListener('click', downloadCronogramaPdf);
-
 if ($('btnRegresarBandeja')) {
   $('btnRegresarBandeja').addEventListener('click', () => {
     intentarRegresarABandeja();
@@ -1375,7 +1288,7 @@ if ($('btnRegresarBandeja')) {
 }
 
 if($('btnDeriveBoss')) $('btnDeriveBoss').addEventListener('click',()=>showModal('Derivado a jefe','El caso fue derivado a jefe para revisión.'));
-$('closeModal').addEventListener('click',()=>modal.classList.add('hidden'));$('acceptModal').addEventListener('click',()=>modal.classList.add('hidden'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});document.addEventListener('click',closeOptionMenus);document.addEventListener('keydown',e=>{if(e.key==='Escape'){modal.classList.add('hidden');if($('observarModal'))$('observarModal').classList.add('hidden');if($('docPreviewModal'))$('docPreviewModal').classList.add('hidden');closeOptionMenus();}});
+$('closeModal').addEventListener('click',()=>modal.classList.add('hidden'));$('acceptModal').addEventListener('click',()=>modal.classList.add('hidden'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});document.addEventListener('click',closeOptionMenus);document.addEventListener('keydown',e=>{if(e.key==='Escape'){modal.classList.add('hidden');if($('aprobarModal'))$('aprobarModal').classList.add('hidden');if($('observarModal'))$('observarModal').classList.add('hidden');if($('docPreviewModal'))$('docPreviewModal').classList.add('hidden');closeOptionMenus();}});
 
 // --- Nuevas Acciones de Operaciones ---
 $('btnRegresarBandejaOps')?.addEventListener('click',intentarRegresarABandeja);
@@ -1468,33 +1381,72 @@ observarModal?.addEventListener('click', e => {
   if (e.target === observarModal) observarModal.classList.add('hidden');
 });
 
-$('btnAprobarActivarBantotal')?.addEventListener('click',()=>{
-  showModal('Activación Exitosa', `Se aprobó la solicitud y se activó exitosamente en Bantotal.`);
-  
+const aprobarModal = $('aprobarModal');
+const closeAprobarModal = $('closeAprobarModal');
+const cancelAprobarModal = $('cancelAprobarModal');
+const confirmAprobarModal = $('confirmAprobarModal');
+const aprobarComentario = $('aprobarComentario');
+const aprobarComentarioCounter = $('aprobarComentarioCounter');
+
+function cerrarModalAprobacion() {
+  aprobarModal?.classList.add('hidden');
+}
+
+function actualizarContadorAprobacion() {
+  if (!aprobarComentario || !aprobarComentarioCounter) return;
+  if (aprobarComentario.value.length > 250) aprobarComentario.value = aprobarComentario.value.slice(0, 250);
+  aprobarComentarioCounter.textContent = `${aprobarComentario.value.length}/250`;
+}
+
+function abrirModalAprobacion() {
+  if (!currentCase) return;
+  if (aprobarComentario) aprobarComentario.value = '';
+  actualizarContadorAprobacion();
+  aprobarModal?.classList.remove('hidden');
+  setTimeout(() => aprobarComentario?.focus(), 0);
+}
+
+function confirmarAprobacionOperaciones() {
+  if (!currentCase) return;
+
+  currentCase.comentarioAprobacion = String(aprobarComentario?.value || '').trim().slice(0, 250);
+
   currentCase.estado = 'Activado';
   currentCase.fechaActivacion = getFormattedNow();
   currentCase.analistaActivacion = usuarioOperacionesSesion;
+  currentCase.nombreAnalistaActivacion = obtenerNombreAnalistaOperaciones(usuarioOperacionesSesion);
   currentCase.historialOperaciones = currentCase.historialOperaciones || [];
-  currentCase.historialOperaciones.push({rol:'Analista de Operaciones',usuario:usuarioOperacionesSesion,fecha:currentCase.fechaActivacion,comentario:'Solicitud aprobada y activada en Bantotal.'});
+  currentCase.historialOperaciones.push({
+    rol: 'Analista de Operaciones',
+    usuario: usuarioOperacionesSesion,
+    fecha: currentCase.fechaActivacion,
+    tipo: 'aprobacion',
+    decision: 'Aprobado',
+    comentario: currentCase.comentarioAprobacion || 'Solicitud aprobada exitosamente.',
+    comentarioAprobacion: String(currentCase.comentarioAprobacion || '').trim()
+  });
+  registrarAprobacionEnComentarios(currentCase);
   saveCases();
   fillAnalistaFilter();
-  
-  $('stageAPanel').classList.add('hidden');
-  $('stageBPanel').classList.remove('hidden');
-  $('detailHeaderTitle').textContent = "Activación Bantotal";
-  
-  populateStageB();
-  renderTracking();
   applyFilters();
-  
-  if($('btnAprobarActivarBantotal')) $('btnAprobarActivarBantotal').disabled = true;
-  if($('btnObservarOperaciones')) $('btnObservarOperaciones').disabled = true;
-  if($('btnRechazarOperaciones')) $('btnRechazarOperaciones').disabled = true;
+  cerrarModalAprobacion();
+  showModal(
+    'Activación Exitosa',
+    'Solicitud aprobada exitosamente!',
+    'success',
+    false,
+    regresarABandeja
+  );
+}
 
-  window.scrollTo({top:0,behavior:'smooth'});
+$('btnAprobarActivarBantotal')?.addEventListener('click', abrirModalAprobacion);
+aprobarComentario?.addEventListener('input', actualizarContadorAprobacion);
+closeAprobarModal?.addEventListener('click', cerrarModalAprobacion);
+cancelAprobarModal?.addEventListener('click', cerrarModalAprobacion);
+confirmAprobarModal?.addEventListener('click', confirmarAprobacionOperaciones);
+aprobarModal?.addEventListener('click', event => {
+  if (event.target === aprobarModal) cerrarModalAprobacion();
 });
-
-$('btnRegresarBandejaActivacion')?.addEventListener('click',intentarRegresarABandeja);
 
 let activePreviewName = '';
 let activePreviewNum = 1;
@@ -1516,5 +1468,5 @@ function closeDocumentPreview() {
 $('closePreviewModal')?.addEventListener('click', closeDocumentPreview);
 $('btnCerrarPreview')?.addEventListener('click', closeDocumentPreview);
 $('btnDescargarPreview')?.addEventListener('click', () => {
-  downloadDocumentPdf(activePreviewName, activePreviewNum);
+  downloadOpsDocument(activePreviewName);
 });

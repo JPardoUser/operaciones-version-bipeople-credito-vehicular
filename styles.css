@@ -1449,6 +1449,139 @@ th{font-size:11.5px!important;}
 }
 .ops-checklist-files button:hover { background:#edf4ff; }
 
+.ops-checklist-file-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex:0 0 auto;
+}
+
+.ops-checklist-files button.preview {
+  background:#0f51d7;
+  color:#fff;
+}
+
+.ops-checklist-files button.preview:hover {
+  background:#0b43b5;
+}
+
+.approval-comment-modal {
+  width:min(520px,100%);
+  padding:24px;
+  text-align:left;
+  border:1px solid #d8e1ee;
+}
+
+.approval-comment-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+  padding-bottom:16px;
+  margin-bottom:18px;
+  border-bottom:1px solid #e2e8f0;
+}
+
+.approval-comment-header h3 {
+  margin:0 0 5px;
+  color:#003893;
+  font-size:1.3rem;
+}
+
+.approval-comment-header p {
+  margin:0;
+  color:#64748b;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.approval-comment-header button {
+  border:0;
+  background:transparent;
+  color:#64748b;
+  font-size:28px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.approval-comment-modal > label {
+  display:block;
+  margin-bottom:8px;
+  color:#1e293b;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+}
+
+.approval-comment-modal > label span {
+  color:#64748b;
+  font-weight:700;
+  text-transform:none;
+}
+
+.approval-comment-modal textarea {
+  width:100%;
+  min-height:120px;
+  padding:12px 14px;
+  border:1.5px solid #cbd5e1;
+  border-radius:12px;
+  color:#1e293b;
+  font:14px/1.5 inherit;
+  resize:none;
+}
+
+.approval-comment-modal textarea:focus {
+  border-color:#1769e0;
+  outline:3px solid rgba(23,105,224,.12);
+}
+
+.approval-comment-counter {
+  margin-top:6px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:700;
+  text-align:right;
+}
+
+.approval-comment-actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  padding-top:16px;
+  margin-top:16px;
+  border-top:1px solid #e2e8f0;
+}
+
+.approval-comment-actions .btn {
+  min-width:145px;
+  height:44px;
+}
+
+@media (max-width: 760px) {
+  .ops-checklist-files > .ops-checklist-file-row {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .ops-checklist-file-actions {
+    width:100%;
+  }
+
+  .ops-checklist-file-actions button {
+    flex:1 1 0;
+  }
+
+  .approval-comment-actions {
+    flex-direction:column-reverse;
+  }
+
+  .approval-comment-actions .btn {
+    width:100%;
+  }
+}
+
 .ops-review-card {
   display: grid;
   padding: 24px;
